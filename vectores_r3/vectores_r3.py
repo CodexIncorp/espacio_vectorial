@@ -13,8 +13,22 @@ center_x_screen = (root.winfo_screenwidth() // 2) - (w_window // 2)
 center_y_screen = (root.winfo_screenheight() // 2) - (h_window // 2)
 root.geometry(f"{w_window}x{h_window}+{center_x_screen}+{center_y_screen}")
 root.title("Espacio vectorial R3")
-frame = tk.Frame(root)
-frame.pack(pady=10)
+frame_principal = tk.Frame(root)
+frame_principal.pack()
+
+# Selector coords.
+modo_coord = tk.StringVar(value="rect")
+frame_selector = tk.Frame(root)
+frame_selector.pack(pady=5)
+tk.Label(frame_selector, text="Sistema de coordenadas: ").pack(side=tk.LEFT)
+tk.Radiobutton(frame_selector, text="Rectangulares", variable=modo_coord, value="rect").pack(side=tk.LEFT)
+tk.Radiobutton(frame_selector, text="Esfericas", variable=modo_coord, value="esf").pack(side=tk.LEFT)
+
+#Selector de unidad angular
+unidad_ang=tk.StringVar(value="grad")
+tk.Label(frame_selector, text="Grados").pack(side=tk.LEFT)
+tk.Radiobutton(frame_selector, text="Grados", variable=unidad_ang, value="grad").pack(side=tk.LEFT)
+tk.Radiobutton(frame_selector, text="Radianes", variable=unidad_ang, value="rad").pack(side=tk.LEFT)
 
 # Instanciar gráfico
 fig = plt.figure()
@@ -122,7 +136,7 @@ def dibujar_coords_polares():
 
 
 # Inputs para definir el origen
-frame_o = tk.LabelFrame(frame, text="Coordenadas del origen del vector")
+frame_o = tk.LabelFrame(frame_principal, text="Coordenadas del origen del vector")
 frame_o.grid(row=0, column=0, padx=20)
 
 tk.Label(frame_o, text="Ox: ").grid(row=0, column=0)
@@ -139,7 +153,7 @@ entry_oz.grid(row=2, column=1)
 
 
 # Inputs para x, y, z
-frame_vc = tk.LabelFrame(frame, text="Coordenadas del vector")
+frame_vc = tk.LabelFrame(frame_principal, text="Coordenadas del vector")
 frame_vc.grid(row=0, column=1, padx=20)
 
 tk.Label(frame_vc, text="x: ").grid(row=0, column=0)
