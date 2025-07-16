@@ -4,16 +4,14 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import numpy as np
 
-#Que escale para mostrar el nuevo origen...
-
 # Configurar la ventana
 root = tk.Tk()
 root.update_idletasks()
-wdth = root.winfo_width()
-hght = root.winfo_height()
-w = (root.winfo_screenwidth() // 2) - (wdth // 2)
-h = (root.winfo_screenheight() // 2) - (hght // 2)
-root.geometry(f"+{w}+{h}")
+w_window = 555
+h_window = 635
+center_x_screen = (root.winfo_screenwidth() // 2) - (w_window // 2)
+center_y_screen = (root.winfo_screenheight() // 2) - (h_window // 2)
+root.geometry(f"{w_window}x{h_window}+{center_x_screen}+{center_y_screen}")
 root.title("Espacio vectorial R3")
 frame = tk.Frame(root)
 frame.pack(pady=10)
@@ -74,7 +72,7 @@ def dibujar_prisma_rect():
     ax.set_zlabel("Z", color="b")
 
     # Ajustar límites (escala automática)
-    limite = np.max(np.abs(vector)) + 1
+    limite = np.max(np.abs(vector)) + np.max(np.abs(origen_p)) + 1
     ax.set_xlim([-limite, limite])
     ax.set_ylim([-limite, limite])
     ax.set_zlim([-limite, limite])
@@ -108,8 +106,23 @@ def dibujar_prisma_rect():
     canvas_fig.draw()
 
 
+def dibujar_esfera():
+    # Algo...
+    r = 1
+
+
+def dibujar_cilindro():
+    # Otro algo...
+    hc = 1
+
+
+def dibujar_coords_polares():
+    # Otro más algo...
+    angle = 45
+
+
 # Inputs para definir el origen
-frame_o = tk.LabelFrame(frame, text="Coordenadas del origen")
+frame_o = tk.LabelFrame(frame, text="Coordenadas del origen del vector")
 frame_o.grid(row=0, column=0, padx=20)
 
 tk.Label(frame_o, text="Ox: ").grid(row=0, column=0)
