@@ -1,4 +1,5 @@
 import tkinter as tk
+from turtle import color
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
@@ -17,39 +18,110 @@ root.title("Espacio vectorial R3")
 frame_principal = tk.Frame(root)
 frame_principal.pack()
 
-# Selector coords.
 modo_coord = tk.StringVar(value="rect")
-frame_selector = tk.Frame(root)
-frame_selector.pack(pady=5)
+coord_anterior = tk.StringVar(value="rect")
+unidad_ang = tk.StringVar(value="grad")
+
+
+def convertir_coords(anterior, nueva):
+    try:
+        if anterior == "rect":
+            frame_rect.grid()
+            frame_esf.grid_remove()
+            frame_cil.grid_remove()
+
+            r = float(entry_r.get()) if entry_r.get() != 0 else 0
+            theta = float(entry_theta.get()) if entry_theta.get() != 0 else 0
+            phi = float(entry_phi.get()) if entry_phi.get() != 0 else 0
+            theta = math.radians(theta)
+            phi = math.radians(phi)
+            x = r * math.sin(phi) * math.cos(theta)
+            y = r * math.sin(phi) * math.sin(theta)
+            z = r * math.cos(phi)
+
+            entry_x.delete(0, tk.END)
+            entry_x.insert(0, f"{x:.4f}")
+            entry_y.delete(0, tk.END)
+            entry_y.insert(0, f"{y:.4f}")
+            entry_z.delete(0, tk.END)
+            entry_z.insert(0, f"{z:.4f}")
+
+            if r != 0 and theta != 0 and phi != 0:
+                trazar_vector()
+
+        elif modo_coord.get() == "esf":
+            frame_esf.grid()
+            frame_rect.grid_remove()
+            frame_cil.grid_remove()
+
+            x = float(entry_x.get()) if entry_x.get() != 0 else 0
+            y = float(entry_y.get()) if entry_y.get() != 0 else 0
+            z = float(entry_z.get()) if entry_z.get() != 0 else 0
+            r = math.sqrt(x**2 + y**2 + z**2)
+            theta = math.atan2(y, x)
+            phi = math.acos(z / r) if r != 0 else 0
+
+            if unidad_ang.get() == "grad":
+                theta = math.degrees(theta)
+                phi = math.degrees(phi)
+
+            entry_r.delete(0, tk.END)
+            entry_r.insert(0, f"{r:.4f}")
+            entry_theta.delete(0, tk.END)
+            entry_theta.insert(0, f"{theta:.4f}")
+            entry_phi.delete(0, tk.END)
+            entry_phi.insert(0, f"{phi:.4f}")
+
+            if x != 0 and y != 0 and z != 0:
+                trazar_vector()
+
+        elif modo_coord.get() == "cil":
+            frame_cil.grid()
+            frame_rect.grid_remove()
+            frame_esf.grid_remove()
+    except:
+        lbl_error.config(
+            text="Ocurrio un error no esperado al intentar cambiar el sistema de coordenadas."
+        )
 
 
 def switch_coords_frame():
-    if modo_coord.get() == "rect":
-        frame_rect.grid()
-        frame_esf.grid_remove()
-    elif modo_coord.get() == "esf":
-        frame_esf.grid()
-        frame_rect.grid_remove()
+    anterior = coord_anterior.get()
+    nueva = modo_coord.get()
+
+    if anterior != nueva:
+        convertir_coords(anterior=anterior, nueva=nueva)
+
+    coord_anterior.set(nueva)
 
 
+# Selector coords.
+frame_selector = tk.Frame(root)
+frame_selector.pack(pady=5)
 tk.Label(frame_selector, text="Sistema de coordenadas: ").pack(side=tk.LEFT)
 tk.Radiobutton(
     frame_selector,
     text="Rectangulares",
     variable=modo_coord,
     value="rect",
-    command=switch_coords_frame,
+    command=lambda: switch_coords_frame(),
 ).pack(side=tk.LEFT)
 tk.Radiobutton(
     frame_selector,
     text="Esfericas",
     variable=modo_coord,
     value="esf",
-    command=switch_coords_frame,
+    command=lambda: switch_coords_frame(),
+).pack(side=tk.LEFT)
+tk.Radiobutton(
+    frame_selector,
+    text="Cilindricas",
+    variable=modo_coord,
+    value="cil",
+    command=lambda: switch_coords_frame(),
 ).pack(side=tk.LEFT)
 
 # Selector de unidad angular
-unidad_ang = tk.StringVar(value="grad")
 tk.Label(frame_selector, text="Unidad angular:").pack(side=tk.LEFT)
 tk.Radiobutton(frame_selector, text="Grados", variable=unidad_ang, value="grad").pack(
     side=tk.LEFT
@@ -105,6 +177,22 @@ entry_theta.grid(row=1, column=1)
 tk.Label(frame_esf, text="phi: ").grid(row=2, column=0)
 entry_phi = tk.Entry(frame_esf)
 entry_phi.grid(row=2, column=1)
+
+# Frame coords. cil.
+frame_cil = tk.LabelFrame(frame_principal, text="Coordenadas cilindricas")
+frame_cil.grid(row=0, column=1, padx=20)
+
+tk.Label(frame_cil, text="rho: ").grid(row=0, column=0)
+entry_rho = tk.Entry(frame_cil)
+entry_rho.grid(row=0, column=1)
+
+tk.Label(frame_cil, text="theta: ").grid(row=1, column=0)
+entry_theta_cil = tk.Entry(frame_cil)
+entry_theta_cil.grid(row=1, column=1)
+
+tk.Label(frame_cil, text="z: ").grid(row=2, column=0)
+entry_z_cil = tk.Entry(frame_cil)
+entry_z_cil.grid(row=2, column=1)
 
 # Etiqueta de error
 lbl_error = tk.Label(root, text="", fg="red")
@@ -169,8 +257,19 @@ def dibujar_esfera(origen, vector):
     ys = radio * np.sin(u) * np.sin(v) + origen[1]
     zs = radio * np.cos(v) + origen[2]
 
-    entry_x = xs
-    ax.plot_surface(xs, ys, zs, color="cyan", alpha=0.1, edgecolor="black")
+    ax.plot_surface(xs, ys, zs, color="cyan", alpha=0.2, edgecolor="black")
+
+
+def dibujar_cilindro(origen, rho, altura):
+    theta = np.linspace(0, 2 * np.pi, 30)
+    z = np.linspace(0, altura, 10)
+    theta, z = np.meshgrid(theta, z)
+
+    x = rho * np.cos(theta) + origen[0]
+    y = rho * np.sin(theta) + origen[1]
+    z = z + origen[2]
+
+    ax.plot_surface(x, y, z, color="cyan", alpha=0.2, edgecolor="black")
 
 
 def trazar_vector():
@@ -197,6 +296,7 @@ def trazar_vector():
 
         vector = np.array([x, y, z])
         pf_vector = origen_p + vector
+
         dibujar_prisma_rect(origen_p=origen_p, pf_vector=pf_vector)
     elif modo_coord.get() == "esf":
         r = float(entry_r.get())
@@ -214,6 +314,19 @@ def trazar_vector():
         vector = np.array([x, y, z])
 
         dibujar_esfera(origen=origen_p, vector=vector)
+    elif modo_coord.get() == "cil":
+        rho = float(entry_rho.get())
+        theta = float(entry_theta_cil.get())
+        z = float(entry_z_cil.get())
+
+        if unidad_ang.get() == "grad":
+            theta = math.radians(theta)
+
+        x = rho * math.cos(theta)
+        y = rho * math.sin(theta)
+        vector = np.array([x, y, z])
+
+        dibujar_cilindro(origen=origen_p, rho=rho, altura=z)
 
     lbl_error.config(text="")
 
@@ -238,11 +351,6 @@ def trazar_vector():
 
     # Mostrar en el canvas
     canvas_fig.draw()
-
-
-def dibujar_cilindro():
-    # Otro algo...
-    hc = 1
 
 
 tk.Button(root, text="Generar vector", command=trazar_vector).pack(pady=5)
