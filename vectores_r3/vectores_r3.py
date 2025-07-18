@@ -3,6 +3,7 @@ from turtle import color
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk
 import numpy as np
 import math
 
@@ -10,7 +11,7 @@ import math
 root = tk.Tk()
 root.update_idletasks()
 w_window = 555
-h_window = 660
+h_window = 700
 center_x_screen = (root.winfo_screenwidth() // 2) - (w_window // 2)
 center_y_screen = (root.winfo_screenheight() // 2) - (h_window // 2)
 root.geometry(f"{w_window}x{h_window}+{center_x_screen}+{center_y_screen}")
@@ -175,8 +176,12 @@ tk.Radiobutton(
 # Selector de unidad angular
 frame_selector_ang = tk.LabelFrame(frame_principal, text="Unidad angular: ")
 frame_selector_ang.grid(row=1, column=1, padx=10)
-tk.Radiobutton(frame_selector_ang, text="Grados", variable=unidad_ang, value="grad").grid(row=0, column=0, padx=5)
-tk.Radiobutton(frame_selector_ang, text="Radianes", variable=unidad_ang, value="rad").grid(row=0, column=1, padx=5)
+tk.Radiobutton(
+    frame_selector_ang, text="Grados", variable=unidad_ang, value="grad"
+).grid(row=0, column=0, padx=5)
+tk.Radiobutton(
+    frame_selector_ang, text="Radianes", variable=unidad_ang, value="rad"
+).grid(row=0, column=1, padx=5)
 
 # Frame origen personalizado
 frame_o = tk.LabelFrame(frame_principal, text="Coordenadas de origen del vector")
@@ -258,7 +263,36 @@ ax.text(0, 0, 0, "O", fontsize=8, color="black")
 # Crear canvas vacío
 canvas_fig = FigureCanvasTkAgg(fig, master=root)
 canvas_fig.get_tk_widget().pack()
-switch_coords_frame()
+toolbar=NavigationToolbar2Tk(canvas_fig, root)
+toolbar.update()
+canvas_fig._tkcanvas.pack()
+# canvas_fig.draw()
+# canvas_fig.get_tk_widget().focus_set()  # asegura foco
+# canvas_fig.get_tk_widget().bind("<Enter>", lambda e: canvas_fig.get_tk_widget().focus_set())
+# canvas_fig.mpl_connect("scroll_event", lambda event: None)  # activa scroll
+
+
+
+def dibujar_cosenos_directores(origen, dir_eje, vector, color, etiqueta):
+    u = dir_eje / np.linalg.norm(dir_eje)
+    v = vector / np.linalg.norm(vector)
+
+    angulo = np.arccos(np.clip(np.dot(u, v), -1.0, 1.0))
+
+    # Interpolar puntos sobre el arco
+    pasos = 100
+    arco = []
+    for t in np.linspace(0, angulo, pasos):
+        punto = u * np.cos(t) + v * np.sin(t)
+        arco.append(origen + punto * 0.5)  # Tamaño del arco
+
+    arco = np.array(arco)
+    ax.plot(arco[:, 0], arco[:, 1], arco[:, 2], color=color, linewidth=1)
+
+    # Etiqueta
+    idx = min(len(arco) // 2, len(arco) - 1)
+    medio = arco[idx]
+    ax.text(medio[0], medio[1], medio[2], etiqueta, fontsize=8, color=color)
 
 
 def dibujar_prisma_rect(origen_p, pf_vector):
@@ -305,7 +339,7 @@ def dibujar_esfera(origen, vector):
     ys = radio * np.sin(u) * np.sin(v) + origen[1]
     zs = radio * np.cos(v) + origen[2]
 
-    ax.plot_surface(xs, ys, zs, color="cyan", alpha=0.2, edgecolor="black")
+    ax.plot_surface(xs, ys, zs, color="cyan", alpha=0.2, edgecolor="none")
 
 
 def dibujar_cilindro(origen, rho, altura):
@@ -391,11 +425,44 @@ def trazar_vector():
     ax.set_zlabel("Z", color="b")
 
     # Ajustar límites (escala automática)
-    limite = np.max(np.abs(vector)) + np.max(np.abs(origen_p)) + 1
-    ax.set_xlim([-limite, limite])
-    ax.set_ylim([-limite, limite])
-    ax.set_zlim([-limite, limite])
+    rango = np.max(np.abs(origen_p + vector)) + 1
+    ax.auto_scale_xyz([-rango, rango], [-rango, rango], [-rango, rango])
+
+    #Graficar vector
     ax.quiver(*origen_p, *vector, color="b", arrow_length_ratio=0.1)
+
+    # Dibujar cosenos directores
+    modulo = np.linalg.norm(vector)
+    if modulo != 0:
+        a = vector[0] / modulo
+        b = vector[1] / modulo
+        g = vector[2] / modulo
+
+        alpha = np.degrees(np.arccos(np.clip(a, -1.0, 1.0)))
+        beta = np.degrees(np.arccos(np.clip(b, -1.0, 1.0)))
+        gama = np.degrees(np.arccos(np.clip(g, -1.0, 1.0)))
+
+        dibujar_cosenos_directores(
+            origen_p,
+            np.array([1, 0, 0]),
+            vector,
+            color="red",
+            etiqueta=f"a={alpha:.1f}",
+        )
+        dibujar_cosenos_directores(
+            origen_p,
+            np.array([0, 1, 0]),
+            vector,
+            color="green",
+            etiqueta=f"b={beta:.1f}",
+        )
+        dibujar_cosenos_directores(
+            origen_p,
+            np.array([0, 0, 1]),
+            vector,
+            color="blue",
+            etiqueta=f"g={gama:.1f}",
+        )
 
     # Mostrar en el canvas
     canvas_fig.draw()
