@@ -10,7 +10,7 @@ import math
 root = tk.Tk()
 root.update_idletasks()
 w_window = 555
-h_window = 650
+h_window = 660
 center_x_screen = (root.winfo_screenwidth() // 2) - (w_window // 2)
 center_y_screen = (root.winfo_screenheight() // 2) - (h_window // 2)
 root.geometry(f"{w_window}x{h_window}+{center_x_screen}+{center_y_screen}")
@@ -25,19 +25,33 @@ unidad_ang = tk.StringVar(value="grad")
 
 def convertir_coords(anterior, nueva):
     try:
-        if anterior == "rect":
+        if nueva == "rect":
             frame_rect.grid()
             frame_esf.grid_remove()
             frame_cil.grid_remove()
 
-            r = float(entry_r.get()) if entry_r.get() != 0 else 0
-            theta = float(entry_theta.get()) if entry_theta.get() != 0 else 0
-            phi = float(entry_phi.get()) if entry_phi.get() != 0 else 0
-            theta = math.radians(theta)
-            phi = math.radians(phi)
-            x = r * math.sin(phi) * math.cos(theta)
-            y = r * math.sin(phi) * math.sin(theta)
-            z = r * math.cos(phi)
+            if anterior == "esf":
+                r = float(entry_r.get()) if entry_r.get() != 0 else 0
+                theta = float(entry_theta.get()) if entry_theta.get() != 0 else 0
+                phi = float(entry_phi.get()) if entry_phi.get() != 0 else 0
+
+                if unidad_ang.get() == "grad":
+                    theta = math.radians(theta)
+                    phi = math.radians(phi)
+
+                x = r * math.sin(phi) * math.cos(theta)
+                y = r * math.sin(phi) * math.sin(theta)
+                z = r * math.cos(phi)
+            elif anterior == "cil":
+                rho = float(entry_rho.get())
+                theta = float(entry_theta_cil.get())
+                z = float(entry_z_cil.get())
+
+                if unidad_ang.get() == "grad":
+                    theta = math.radians(theta)
+
+                x = rho * math.cos(theta)
+                y = rho * math.sin(theta)
 
             entry_x.delete(0, tk.END)
             entry_x.insert(0, f"{x:.4f}")
@@ -46,17 +60,26 @@ def convertir_coords(anterior, nueva):
             entry_z.delete(0, tk.END)
             entry_z.insert(0, f"{z:.4f}")
 
-            if r != 0 and theta != 0 and phi != 0:
-                trazar_vector()
-
-        elif modo_coord.get() == "esf":
+            trazar_vector()
+        elif nueva == "esf":
             frame_esf.grid()
             frame_rect.grid_remove()
             frame_cil.grid_remove()
 
-            x = float(entry_x.get()) if entry_x.get() != 0 else 0
-            y = float(entry_y.get()) if entry_y.get() != 0 else 0
-            z = float(entry_z.get()) if entry_z.get() != 0 else 0
+            if anterior == "rect":
+                x = float(entry_x.get()) if entry_x.get() != 0 else 0
+                y = float(entry_y.get()) if entry_y.get() != 0 else 0
+                z = float(entry_z.get()) if entry_z.get() != 0 else 0
+            elif anterior == "cil":
+                rho = float(entry_rho.get())
+                theta_cil = float(entry_theta_cil.get())
+                z = float(entry_z_cil.get())
+
+                if unidad_ang.get() == "grad":
+                    theta_cil = math.radians(theta_cil)
+                x = rho * math.cos(theta_cil)
+                y = rho * math.sin(theta_cil)
+
             r = math.sqrt(x**2 + y**2 + z**2)
             theta = math.atan2(y, x)
             phi = math.acos(z / r) if r != 0 else 0
@@ -72,13 +95,42 @@ def convertir_coords(anterior, nueva):
             entry_phi.delete(0, tk.END)
             entry_phi.insert(0, f"{phi:.4f}")
 
-            if x != 0 and y != 0 and z != 0:
-                trazar_vector()
-
-        elif modo_coord.get() == "cil":
+            trazar_vector()
+        elif nueva == "cil":
             frame_cil.grid()
             frame_rect.grid_remove()
             frame_esf.grid_remove()
+
+            if anterior == "rect":
+                x = float(entry_x.get()) if entry_x.get() != 0 else 0
+                y = float(entry_y.get()) if entry_y.get() != 0 else 0
+                z = float(entry_z.get()) if entry_z.get() != 0 else 0
+            elif anterior == "esf":
+                r = float(entry_r.get()) if entry_r.get() != 0 else 0
+                theta = float(entry_theta.get()) if entry_theta.get() != 0 else 0
+                phi = float(entry_phi.get()) if entry_phi.get() != 0 else 0
+
+                if unidad_ang.get() == "grad":
+                    theta = math.radians(theta)
+                    phi = math.radians(phi)
+
+                x = r * math.sin(phi) * math.cos(theta)
+                y = r * math.sin(phi) * math.sin(theta)
+                z = r * math.cos(phi)
+
+            rho = math.sqrt(x**2 + y**2)
+            theta_cil = math.atan2(y, x)
+            if unidad_ang.get() == "grad":
+                theta_cil = math.degrees(theta_cil)
+
+            entry_rho.delete(0, tk.END)
+            entry_rho.insert(0, f"{rho:.4f}")
+            entry_theta_cil.delete(0, tk.END)
+            entry_theta_cil.insert(0, f"{theta_cil:.4f}")
+            entry_z_cil.delete(0, tk.END)
+            entry_z_cil.insert(0, f"{z:.4f}")
+
+            trazar_vector()
     except:
         lbl_error.config(
             text="Ocurrio un error no esperado al intentar cambiar el sistema de coordenadas."
@@ -96,39 +148,35 @@ def switch_coords_frame():
 
 
 # Selector coords.
-frame_selector = tk.Frame(root)
-frame_selector.pack(pady=5)
-tk.Label(frame_selector, text="Sistema de coordenadas: ").pack(side=tk.LEFT)
+frame_selector_coords = tk.LabelFrame(frame_principal, text="Sistema de coordenadas: ")
+frame_selector_coords.grid(row=1, column=0, padx=10)
 tk.Radiobutton(
-    frame_selector,
+    frame_selector_coords,
     text="Rectangulares",
     variable=modo_coord,
     value="rect",
     command=lambda: switch_coords_frame(),
-).pack(side=tk.LEFT)
+).grid(row=0, column=0, padx=5)
 tk.Radiobutton(
-    frame_selector,
+    frame_selector_coords,
     text="Esfericas",
     variable=modo_coord,
     value="esf",
     command=lambda: switch_coords_frame(),
-).pack(side=tk.LEFT)
+).grid(row=0, column=1, padx=5)
 tk.Radiobutton(
-    frame_selector,
+    frame_selector_coords,
     text="Cilindricas",
     variable=modo_coord,
     value="cil",
     command=lambda: switch_coords_frame(),
-).pack(side=tk.LEFT)
+).grid(row=0, column=2, padx=5)
 
 # Selector de unidad angular
-tk.Label(frame_selector, text="Unidad angular:").pack(side=tk.LEFT)
-tk.Radiobutton(frame_selector, text="Grados", variable=unidad_ang, value="grad").pack(
-    side=tk.LEFT
-)
-tk.Radiobutton(frame_selector, text="Radianes", variable=unidad_ang, value="rad").pack(
-    side=tk.LEFT
-)
+frame_selector_ang = tk.LabelFrame(frame_principal, text="Unidad angular: ")
+frame_selector_ang.grid(row=1, column=1, padx=10)
+tk.Radiobutton(frame_selector_ang, text="Grados", variable=unidad_ang, value="grad").grid(row=0, column=0, padx=5)
+tk.Radiobutton(frame_selector_ang, text="Radianes", variable=unidad_ang, value="rad").grid(row=0, column=1, padx=5)
 
 # Frame origen personalizado
 frame_o = tk.LabelFrame(frame_principal, text="Coordenadas de origen del vector")
@@ -269,7 +317,7 @@ def dibujar_cilindro(origen, rho, altura):
     y = rho * np.sin(theta) + origen[1]
     z = z + origen[2]
 
-    ax.plot_surface(x, y, z, color="cyan", alpha=0.2, edgecolor="black")
+    ax.plot_surface(x, y, z, color="cyan", alpha=0.2, edgecolor="none")
 
 
 def trazar_vector():
@@ -354,5 +402,7 @@ def trazar_vector():
 
 
 tk.Button(root, text="Generar vector", command=trazar_vector).pack(pady=5)
+frame_esf.grid_remove()
+frame_cil.grid_remove()
 
 root.mainloop()
